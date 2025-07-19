@@ -13,31 +13,6 @@ RECORDING_FILE = "/tmp/whisper_recording.wav"
 PID_FILE = "/tmp/whisper_dictation.pid"
 
 
-def check_dependencies():
-    """Check if required dependencies are available."""
-    dependencies = {
-        "pw-record": "PipeWire recording tool",
-        "ydotool": "Input automation tool",
-    }
-
-    missing = []
-    for cmd, desc in dependencies.items():
-        if subprocess.run(["which", cmd], capture_output=True).returncode != 0:
-            missing.append(f"{cmd} ({desc})")
-
-    # Check Python dependencies
-    try:
-        import faster_whisper  # noqa: F401
-    except ImportError:
-        missing.append("faster-whisper (Python package)")
-
-    if missing:
-        print("Error: Missing dependencies:")
-        for dep in missing:
-            print(f"  - {dep}")
-        sys.exit(1)
-
-
 def begin_recording():
     """Start recording audio using pw-record."""
     # Check if already recording
@@ -55,7 +30,9 @@ def begin_recording():
 
     # Start recording
     cmd = ["pw-record", "--format=s16", "--rate=16000", "--channels=1", RECORDING_FILE]
-    process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    process = subprocess.Popen(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
 
     # Save PID
     with Path(PID_FILE).open("w") as f:
@@ -110,28 +87,37 @@ def end_recording():
                 # Type the transcription using ydotool
                 print("Typing transcription...")
                 try:
-                    result = subprocess.run(
+                    subprocess.run(
                         ["ydotool", "type", transcription],
                         check=True,
                         capture_output=True,
-                        text=True
+                        text=True,
                     )
                     print("Done!")
                 except subprocess.CalledProcessError as e:
                     error_msg = e.stderr if e.stderr else str(e)
-                    if "ydotoold" in error_msg or "socket" in error_msg or "Connection refused" in error_msg:
+                    if (
+                        "ydotoold" in error_msg
+                        or "socket" in error_msg
+                        or "Connection refused" in error_msg
+                    ):
                         print("⚠️  Could not connect to ydotool daemon")
 
                         # Check if user is in ydotool group
                         import grp
+
                         try:
-                            ydotool_group = grp.getgrnam('ydotool')
-                            user_groups = [g.gr_name for g in grp.getgrall() if os.getlogin() in g.gr_mem]
-                            if 'ydotool' not in user_groups:
+                            grp.getgrnam("ydotool")
+                            user_groups = [
+                                g.gr_name
+                                for g in grp.getgrall()
+                                if os.getlogin() in g.gr_mem
+                            ]
+                            if "ydotool" not in user_groups:
                                 print("❌ You are NOT in the 'ydotool' group!")
                                 print("   Run: sudo usermod -a -G ydotool $USER")
                                 print("   Then logout and login again.")
-                        except:
+                        except KeyError:
                             pass
 
                         print("Possible solutions:")
@@ -166,19 +152,11 @@ def end_recording():
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(
-        description="Simple whisper dictation tool",
-        prog="whisper_dictation.py"
+        description="Simple whisper dictation tool", prog="whisper_dictation.py"
     )
-    parser.add_argument(
-        "command",
-        choices=["begin", "end"],
-        help="Command to execute"
-    )
+    parser.add_argument("command", choices=["begin", "end"], help="Command to execute")
 
     args = parser.parse_args()
-
-    # Check dependencies
-    check_dependencies()
 
     if args.command == "begin":
         begin_recording()

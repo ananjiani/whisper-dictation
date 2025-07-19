@@ -11,6 +11,42 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
+      packages = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          pythonWithWhisper = pkgs.python3.withPackages (ps: with ps; [
+            faster-whisper
+          ]);
+        in
+        {
+          default = pkgs.stdenv.mkDerivation {
+            pname = "whisper-dictation";
+            version = "0.1.0";
+
+            src = ./.;
+
+            nativeBuildInputs = [ pkgs.makeWrapper ];
+
+            installPhase = ''
+              mkdir -p $out/bin
+              cp whisper_dictation.py $out/bin/whisper-dictation
+              chmod +x $out/bin/whisper-dictation
+
+              # Wrap the script to use the correct Python interpreter
+              wrapProgram $out/bin/whisper-dictation \
+                --prefix PATH : ${pkgs.lib.makeBinPath [ pythonWithWhisper ]}
+            '';
+
+            meta = with pkgs.lib; {
+              description = "Minimal whisper dictation tool using faster-whisper";
+              homepage = "https://github.com/ananjiani/whisper-dictation";
+              license = licenses.mit;
+              platforms = platforms.linux;
+              mainProgram = "whisper-dictation";
+            };
+          };
+        });
+
       devShells = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -75,5 +111,9 @@
             '';
           };
         });
+
+      overlays.default = final: prev: {
+        whisper-dictation = self.packages.${final.system}.default;
+      };
     };
 }
