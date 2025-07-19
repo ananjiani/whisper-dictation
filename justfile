@@ -4,7 +4,7 @@ default:
 
 # Run linter
 lint:
-    ruff check whisper_dictation.py
+    ruff check --fix whisper_dictation.py
 
 # Format code
 format:
