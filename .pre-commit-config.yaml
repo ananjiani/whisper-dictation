@@ -1,62 +1,16 @@
 repos:
-  # General hooks that apply to all files
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-      - id: check-merge-conflict
       - id: check-added-large-files
-        args: ['--maxkb=5000']
-      - id: check-yaml
-      - id: check-json
-      - id: check-toml
-      - id: check-ast
-        files: \.py$
-      - id: debug-statements
-        files: \.py$
-
-  # Python specific hooks - using just commands for consistency
-  - repo: local
-    hooks:
-      - id: format
-        name: Format Python code
-        entry: just format
-        language: system
-        types: [python]
-        pass_filenames: false
-
-  - repo: local
-    hooks:
-      - id: lint
-        name: Lint Python code
-        entry: just lint
-        language: system
-        types: [python]
-        pass_filenames: false
-        require_serial: true
-
-  - repo: local
-    hooks:
-      - id: typecheck
-        name: Type check Python code
-        entry: just typecheck
-        language: system
-        types: [python]
-        pass_filenames: false
-        require_serial: true
-
-  # Fast unit tests
-  - repo: local
-    hooks:
-      - id: unit-tests
-        name: Unit Tests (fast)
-        entry: just test-unit
-        language: system
-        files: \.py$
-        pass_filenames: false
-        require_serial: true
-
-# Configuration
-default_stages: [pre-commit]
-fail_fast: true
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable

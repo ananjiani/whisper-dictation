@@ -1,104 +1,83 @@
-# whisper_dictation
+# whisper-dictation
 
-Add your project description here.
+Minimal voice dictation tool using faster-whisper - a reimplementation of nerd-dictation using Whisper instead of VOSK.
 
-## Quick Start
+## Features
 
-This project uses Nix for development environment management and `uv` for Python dependency management.
+- Simple voice dictation using faster-whisper
+- PipeWire audio recording (pw-record)
+- Universal text input via ydotool (works on X11/Wayland)
+- Minimal dependencies and single-file implementation
 
-### Prerequisites
+## Requirements
 
-- [Nix](https://nixos.org/download.html) with flakes enabled
-- (Optional) [direnv](https://direnv.net/) for automatic environment activation
+- Python 3.11+
+- PipeWire (for `pw-record`)
+- ydotool (for typing text)
+- faster-whisper (installed automatically)
 
-### Development Setup
+## Installation
 
-1. **Enter the development environment:**
-   ```bash
-   nix develop
-   ```
-
-   Or with direnv:
-   ```bash
-   echo "use flake" > .envrc
-   direnv allow
-   ```
-
-2. **Install Python dependencies:**
-   ```bash
-   just install
-   ```
-
-3. **Set up pre-commit hooks (recommended):**
-   ```bash
-   just install-hooks
-   ```
-
-## Development Workflow
-
-### Common Commands
-
-Run `just` to see all available commands:
+### Using Nix (recommended)
 
 ```bash
-just            # Show available commands
-just test       # Run all tests
-just test-fast  # Run only fast tests
-just lint       # Run linters
-just format     # Format code
-just check      # Run all checks (lint, typecheck, test)
-just watch-test # Watch files and run tests on changes
+# Enter development shell with all dependencies
+nix develop
+
+# Install Python dependencies
+uv sync
 ```
 
-### Running the Application
+### Manual installation
 
 ```bash
-just run        # Run with default arguments
-just run --help # Show CLI help
+# Install system dependencies
+# On Arch: sudo pacman -S pipewire ydotool
+# On Ubuntu: sudo apt install pipewire ydotool
+
+# Install Python dependency
+pip install faster-whisper
 ```
 
-Or directly:
-```bash
-python -m whisper_dictation --help
-```
-
-### Testing
-
-Tests are organized with markers:
-- `unit`: Fast unit tests with no external dependencies
-- `integration`: Tests that may use external resources
-- `slow`: Tests that take longer to run
+## Usage
 
 ```bash
-just test-unit        # Run only unit tests
-just test-integration # Run only integration tests
-just test-cov        # Run tests with coverage report
+# Start recording
+./whisper_dictation.py begin
+
+# Stop recording and type the transcribed text
+./whisper_dictation.py end
 ```
 
-### Code Quality
+## How it works
 
-The project uses:
-- **ruff** for linting and formatting
-- **mypy** for type checking
-- **pre-commit** for automated checks before commits
+1. `begin` starts a `pw-record` process to record audio to a temporary WAV file
+2. `end` stops the recording, transcribes the audio using faster-whisper (tiny model), and types the result using ydotool
+3. Temporary files are cleaned up automatically
 
-### Project Structure
+## Configuration
 
+Currently uses sensible defaults:
+- Model: `tiny` (fast, ~39MB)
+- Audio: 16kHz mono (optimal for speech)
+- No configuration files needed
+
+## Troubleshooting
+
+### ydotool not working
+
+Make sure ydotool daemon is running:
+```bash
+sudo systemctl start ydotoold
+# or
+ydotoold &
 ```
-whisper_dictation/
-├── whisper_dictation/          # Main package
-│   ├── __init__.py
-│   └── __main__.py       # CLI entry point
-├── tests/                # Test files
-│   ├── conftest.py      # Pytest configuration
-│   └── test_*.py        # Test modules
-├── pyproject.toml       # Project configuration
-├── pytest.ini           # Pytest configuration
-├── justfile            # Development commands
-├── flake.nix           # Nix environment
-└── README.md           # This file
+
+You may need to be in the `input` group:
+```bash
+sudo usermod -a -G input $USER
 ```
 
 ## License
 
-[Add your license here]
+MIT
