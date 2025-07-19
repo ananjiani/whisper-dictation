@@ -1,0 +1,31 @@
+{
+  "mcpServers": {
+    "nixos": {
+      "command": "uvx",
+      "args": [
+        "mcp-nixos"
+      ]
+    },
+    "context7": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@upstash/context7-mcp"
+      ]
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena-mcp-server",
+        "--context",
+        "agent",
+        "--project",
+        "/home/ammar/Documents/projects/flake-templates/python-uv"
+      ],
+      "env": {}
+    }
+  }
+}
