@@ -119,17 +119,36 @@ def end_recording():
                     print("Done!")
                 except subprocess.CalledProcessError as e:
                     error_msg = e.stderr if e.stderr else str(e)
-                    if "ydotoold" in error_msg or "socket" in error_msg:
-                        print("Error: ydotool daemon is not running.")
-                        print("To start it:")
-                        print("  sudo systemctl start ydotoold")
-                        print("  # or")
-                        print("  ydotoold &")
-                        print("Alternatively, here's your transcription to paste manually:")
+                    if "ydotoold" in error_msg or "socket" in error_msg or "Connection refused" in error_msg:
+                        print("⚠️  Could not connect to ydotool daemon")
+
+                        # Check if user is in ydotool group
+                        import grp
+                        try:
+                            ydotool_group = grp.getgrnam('ydotool')
+                            user_groups = [g.gr_name for g in grp.getgrall() if os.getlogin() in g.gr_mem]
+                            if 'ydotool' not in user_groups:
+                                print("❌ You are NOT in the 'ydotool' group!")
+                                print("   Run: sudo usermod -a -G ydotool $USER")
+                                print("   Then logout and login again.")
+                        except:
+                            pass
+
+                        print("Possible solutions:")
+                        print("1. Check if ydotoold is running:")
+                        print("   systemctl status ydotoold")
+                        print("2. You might need to be in the 'input' group:")
+                        print("   sudo usermod -a -G input $USER")
+                        print("   # Then logout and login again")
+                        print("3. Try running ydotoold in user mode:")
+                        print("   systemctl --user start ydotoold")
+                        print("4. Or use wl-clipboard (Wayland) / xclip (X11) instead:")
+                        print("   echo '<transcription>' | wl-copy")
+                        print("📋 Your transcription (ready to paste):")
                         print(f"{transcription}")
                     else:
                         print(f"Error running ydotool: {error_msg}")
-                        print(f"Transcription: {transcription}")
+                        print(f"📋 Transcription: {transcription}")
 
         except Exception as e:
             print(f"Error during transcription: {e}")
