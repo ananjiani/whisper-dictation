@@ -1,11 +1,5 @@
 repos:
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.9.3
-    hooks:
-      - id: ruff
-        args: [--fix]
-      - id: ruff-format
-
+  # General hooks that apply to all files
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:
@@ -14,3 +8,27 @@ repos:
       - id: check-added-large-files
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+
+  # Python specific hooks - using just commands for NixOS compatibility
+  - repo: local
+    hooks:
+      - id: format
+        name: Format Python code
+        entry: just format
+        language: system
+        types: [python]
+        pass_filenames: false
+
+  - repo: local
+    hooks:
+      - id: lint
+        name: Lint Python code
+        entry: just lint
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+# Configuration
+default_stages: [pre-commit]
+fail_fast: true
