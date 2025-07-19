@@ -1,22 +1,15 @@
 repos:
   # General hooks that apply to all files
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.6.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
-      - id: check-merge-conflict
       - id: check-added-large-files
-        args: ['--maxkb=5000']
-      - id: check-yaml
-      - id: check-json
-      - id: check-toml
-      - id: check-ast
-        files: \.py$
-      - id: debug-statements
-        files: \.py$
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
 
-  # Python specific hooks - using just commands for consistency
+  # Python specific hooks - using just commands for NixOS compatibility
   - repo: local
     hooks:
       - id: format
@@ -33,27 +26,6 @@ repos:
         entry: just lint
         language: system
         types: [python]
-        pass_filenames: false
-        require_serial: true
-
-  - repo: local
-    hooks:
-      - id: typecheck
-        name: Type check Python code
-        entry: just typecheck
-        language: system
-        types: [python]
-        pass_filenames: false
-        require_serial: true
-
-  # Fast unit tests
-  - repo: local
-    hooks:
-      - id: unit-tests
-        name: Unit Tests (fast)
-        entry: just test-unit
-        language: system
-        files: \.py$
         pass_filenames: false
         require_serial: true
 

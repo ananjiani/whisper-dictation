@@ -1,76 +1,31 @@
-# Development commands for whisper_dictation
-
-# Default command - show available commands
+# List available commands
 default:
     @just --list
 
-# Install dependencies
-install:
-    uv sync
-
-# Run tests
-test *args="":
-    pytest {{args}}
-
-# Run tests with coverage
-test-cov:
-    pytest --cov --cov-report=term-missing --cov-report=html
-
-# Run only fast tests
-test-fast:
-    pytest -m "not slow"
-
-# Run unit tests only
-test-unit:
-    pytest -m unit -o addopts=""
-
-# Run integration tests only
-test-integration:
-    pytest -m integration
-
-# Lint code
+# Run linter
 lint:
-    ruff check whisper_dictation tests --fix
-    mypy whisper_dictation
+    ruff check --fix whisper_dictation.py
 
 # Format code
 format:
-    ruff format whisper_dictation tests
+    ruff format whisper_dictation.py
 
-# Type check
-typecheck:
-    mypy whisper_dictation
+# Run all checks
+check: lint
+    mypy whisper_dictation.py
 
-# Run all checks (lint, typecheck, test)
-check: lint typecheck test
+# Test the begin command
+test-begin:
+    ./whisper_dictation.py begin
 
-# Watch for changes and run tests
-watch-test *args="":
-    watchexec -e py -- pytest {{args}}
+# Test the end command
+test-end:
+    ./whisper_dictation.py end
 
-# Watch for changes and run a command
-watch +cmd:
-    watchexec -e py -- {{cmd}}
+# Watch for changes and run linter
+watch:
+    watchexec -e py just lint
 
-# Run the application
-run *args="":
-    python -m whisper_dictation {{args}}
-
-# Clean build artifacts
+# Clean temporary files
 clean:
-    rm -rf build dist *.egg-info
-    rm -rf .coverage htmlcov .pytest_cache .mypy_cache .ruff_cache
-    find . -type d -name "__pycache__" -exec rm -rf {} +
-    find . -type f -name "*.pyc" -delete
-
-# Build package
-build:
-    uv build
-
-# Generate lock file
-lock:
-    uv lock
-
-# Update dependencies
-update:
-    uv lock --upgrade
+    rm -f /tmp/whisper_dictation.pid /tmp/whisper_recording.wav
