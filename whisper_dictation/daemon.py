@@ -9,12 +9,15 @@ import time
 from pathlib import Path
 from typing import Any
 
+from .audio import AudioRecorder, AudioStream
 from .config import Config
 from .ipc import IPCServer, MessageHandler
 from .models import (
     DaemonState,
     ErrorResponse,
     IPCMessage,
+    ListAudioDevicesResponse,
+    StartRecordingRequest,
     StatusResponse,
 )
 
@@ -88,6 +91,89 @@ class DaemonMessageHandler(MessageHandler):
         """Handle status request."""
         return self.daemon.get_status()
 
+    async def _handle_list_audio_devices(self, message: IPCMessage) -> IPCMessage:  # noqa: ARG002
+        """Handle list audio devices request."""
+        try:
+            if self.daemon.audio_recorder is None:
+                self.daemon.audio_recorder = AudioRecorder()
+
+            devices = await self.daemon.audio_recorder.list_devices()
+            device_data = [
+                {
+                    "id": device.id,
+                    "name": device.name,
+                    "description": device.description,
+                    "is_default": device.is_default,
+                }
+                for device in devices
+            ]
+            return ListAudioDevicesResponse(device_data)
+        except Exception as e:
+            return ErrorResponse(f"Failed to list audio devices: {e}")
+
+    async def _handle_start_recording(
+        self, message: StartRecordingRequest
+    ) -> IPCMessage:
+        """Handle start recording request."""
+        try:
+            if self.daemon.current_stream is not None:
+                return ErrorResponse("Recording already in progress", 409)
+
+            if self.daemon.audio_recorder is None:
+                self.daemon.audio_recorder = AudioRecorder()
+
+            # Find the device by ID or use default
+            if message.device_id == "default":
+                device = await self.daemon.audio_recorder.get_default_device()
+            else:
+                devices = await self.daemon.audio_recorder.list_devices()
+                device = None
+                for d in devices:
+                    if d.id == message.device_id:
+                        device = d
+                        break
+
+                if device is None:
+                    return ErrorResponse(
+                        f"Audio device '{message.device_id}' not found", 404
+                    )
+
+            # Start recording
+            assert device is not None  # Type guard for mypy
+            self.daemon.current_stream = (
+                await self.daemon.audio_recorder.start_recording(
+                    device,
+                    sample_rate=message.sample_rate,
+                    channels=message.channels,
+                    backend_name=message.backend,
+                )
+            )
+
+            return StatusResponse(
+                state=self.daemon.state,
+                uptime=self.daemon.get_uptime(),
+                model_loaded=False,
+            )
+        except Exception as e:
+            return ErrorResponse(f"Failed to start recording: {e}")
+
+    async def _handle_stop_recording(self, message: IPCMessage) -> IPCMessage:  # noqa: ARG002
+        """Handle stop recording request."""
+        try:
+            if self.daemon.current_stream is None:
+                return ErrorResponse("No recording in progress", 404)
+
+            await self.daemon.current_stream.close()
+            self.daemon.current_stream = None
+
+            return StatusResponse(
+                state=self.daemon.state,
+                uptime=self.daemon.get_uptime(),
+                model_loaded=False,
+            )
+        except Exception as e:
+            return ErrorResponse(f"Failed to stop recording: {e}")
+
 
 class Daemon:
     """Main daemon class for whisper_dictation."""
@@ -107,6 +193,10 @@ class Daemon:
         self._shutdown_event = asyncio.Event()
         self._pause_event = asyncio.Event()
         self._pause_event.set()  # Start unpaused
+
+        # Audio recording components
+        self.audio_recorder: AudioRecorder | None = None
+        self.current_stream: AudioStream | None = None
 
     async def start(self) -> None:
         """Start the daemon."""
@@ -146,6 +236,14 @@ class Daemon:
             return
 
         self.state = DaemonState.STOPPING
+
+        # Stop any active audio recording
+        if self.current_stream:
+            try:
+                await self.current_stream.close()
+                self.current_stream = None
+            except Exception as e:
+                logger.warning(f"Error closing audio stream during shutdown: {e}")
 
         if self.ipc_server:
             await self.ipc_server.stop()

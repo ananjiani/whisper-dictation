@@ -25,6 +25,11 @@ class IPCMessageType(Enum):
     STATUS = "status"
     ERROR = "error"
 
+    # Audio-related messages
+    LIST_AUDIO_DEVICES = "list_audio_devices"
+    START_RECORDING = "start_recording"
+    STOP_RECORDING = "stop_recording"
+
 
 @dataclass
 class IPCMessage:
@@ -115,3 +120,54 @@ class ErrorResponse(IPCMessage):
         super().__init__(type=IPCMessageType.ERROR, data=data)
         self.message = message
         self.code = code
+
+
+class ListAudioDevicesRequest(IPCMessage):
+    """Request to list available audio devices."""
+
+    def __init__(self) -> None:
+        """Initialize ListAudioDevicesRequest."""
+        super().__init__(type=IPCMessageType.LIST_AUDIO_DEVICES)
+
+
+class ListAudioDevicesResponse(IPCMessage):
+    """Response with list of audio devices."""
+
+    def __init__(self, devices: list[dict[str, object]]) -> None:
+        """Initialize ListAudioDevicesResponse."""
+        data = {"devices": devices}
+        super().__init__(type=IPCMessageType.LIST_AUDIO_DEVICES, data=data)
+        self.devices = devices
+
+
+class StartRecordingRequest(IPCMessage):
+    """Request to start audio recording."""
+
+    def __init__(
+        self,
+        device_id: str = "default",
+        sample_rate: int = 16000,
+        channels: int = 1,
+        backend: str | None = None,
+    ) -> None:
+        """Initialize StartRecordingRequest."""
+        data = {
+            "device_id": device_id,
+            "sample_rate": sample_rate,
+            "channels": channels,
+        }
+        if backend:
+            data["backend"] = backend
+        super().__init__(type=IPCMessageType.START_RECORDING, data=data)
+        self.device_id = device_id
+        self.sample_rate = sample_rate
+        self.channels = channels
+        self.backend = backend
+
+
+class StopRecordingRequest(IPCMessage):
+    """Request to stop audio recording."""
+
+    def __init__(self) -> None:
+        """Initialize StopRecordingRequest."""
+        super().__init__(type=IPCMessageType.STOP_RECORDING)
