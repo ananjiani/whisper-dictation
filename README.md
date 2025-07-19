@@ -1,31 +1,35 @@
 # whisper-dictation
 
-Minimal voice dictation tool using faster-whisper - a reimplementation of nerd-dictation using Whisper instead of VOSK.
+A minimal voice dictation tool using OpenAI's Whisper for Linux. Press a hotkey to start recording, speak, then press another hotkey to transcribe and type the text automatically.
 
 ## Features
 
-- Simple voice dictation using faster-whisper
-- PipeWire audio recording (pw-record)
-- Universal text input via ydotool (works on X11/Wayland)
-- Minimal dependencies and single-file implementation
+- 🎤 Simple voice recording with PipeWire
+- 🤖 Accurate transcription using OpenAI's Whisper (via faster-whisper)
+- ⌨️ Automatic text typing with ydotool (works on X11/Wayland)
+- 🚀 Minimal, single-file implementation
+- 🐧 NixOS-ready with included flake
 
 ## Requirements
 
 - Python 3.11+
-- PipeWire (for `pw-record`)
+- PipeWire (for audio recording)
 - ydotool (for typing text)
-- faster-whisper (installed automatically)
+- faster-whisper (Python package)
 
 ## Installation
 
 ### Using Nix (recommended)
 
 ```bash
+# Clone the repository
+git clone https://github.com/ananjiani/whisper-dictation.git
+cd whisper-dictation
+
 # Enter development shell with all dependencies
 nix develop
 
-# Install Python dependencies
-uv sync
+# The script is ready to use!
 ```
 
 ### Manual installation
@@ -34,6 +38,11 @@ uv sync
 # Install system dependencies
 # On Arch: sudo pacman -S pipewire ydotool
 # On Ubuntu: sudo apt install pipewire ydotool
+# On Fedora: sudo dnf install pipewire ydotool
+
+# Clone and setup
+git clone https://github.com/ananjiani/whisper-dictation.git
+cd whisper-dictation
 
 # Install Python dependency
 pip install faster-whisper
