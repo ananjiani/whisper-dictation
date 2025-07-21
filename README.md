@@ -1,22 +1,19 @@
 # whisper-dictation
 
-A minimal voice dictation tool using OpenAI's Whisper for Linux. Press a hotkey to start recording, speak, then press another hotkey to transcribe and type the text automatically.
+A minimal voice dictation tool using OpenAI's Whisper for Linux. Record audio, transcribe it using AI, and output the text to stdout for flexible piping and processing.
 
 ## Features
 
 - 🎤 Simple voice recording with PipeWire
 - 🤖 Accurate transcription using OpenAI's Whisper (via faster-whisper)
-- ⌨️ Instant text pasting using clipboard + ydotool (Wayland only)
+- 📤 Outputs transcription to stdout for flexible piping
 - 🚀 Minimal, single-file implementation
 - 🐧 NixOS-ready with included flake
 
 ## Requirements
 
 - Python 3.11+
-- Wayland compositor (required for wl-clipboard)
 - PipeWire (for audio recording)
-- wl-clipboard (for clipboard operations)
-- ydotool (for paste simulation)
 - faster-whisper (Python package)
 
 ## Installation
@@ -37,18 +34,34 @@ nix develop
 
 ## Usage
 
+### Basic transcription
 ```bash
 # Start recording
 ./whisper_dictation.py begin
 
-# Stop recording and type the transcribed text
+# Stop recording and output transcription to stdout
 ./whisper_dictation.py end
+```
+
+### Piping examples
+```bash
+# Copy to clipboard (Wayland)
+./whisper_dictation.py end | wl-copy
+
+# Copy to clipboard (X11)
+./whisper_dictation.py end | xclip -selection clipboard
+
+# Save to file
+./whisper_dictation.py end > transcription.txt
+
+# Process with custom script
+./whisper_dictation.py end | your-custom-processor
 ```
 
 ## How it works
 
 1. `begin` starts a `pw-record` process to record audio to a temporary WAV file
-2. `end` stops the recording, transcribes the audio using faster-whisper (tiny model), copies text to clipboard, and pastes it using ydotool
+2. `end` stops the recording, transcribes the audio using faster-whisper (tiny model), and outputs the text to stdout
 3. Temporary files are cleaned up automatically
 
 ## Configuration
@@ -60,18 +73,16 @@ Currently uses sensible defaults:
 
 ## Troubleshooting
 
-### ydotool not working
-
-Make sure ydotool daemon is running:
+### No audio recording
+Make sure PipeWire is running:
 ```bash
-sudo systemctl start ydotoold
-# or
-ydotoold &
+systemctl --user status pipewire
 ```
 
-You may need to be in the `input` group:
+### Transcription not working
+Check if faster-whisper is properly installed:
 ```bash
-sudo usermod -a -G input $USER
+python -c "from faster_whisper import WhisperModel; print('OK')"
 ```
 
 ## License
