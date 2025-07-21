@@ -56,9 +56,9 @@ def end_recording():
 
         try:
             os.kill(pid, signal.SIGTERM)
-            print("Stopping recording...")
+            print("Stopping recording...", file=sys.stderr)
         except ProcessLookupError:
-            print("Recording process not found.")
+            print("Recording process not found.", file=sys.stderr)
 
         # Clean up PID file
         Path(PID_FILE).unlink(missing_ok=True)
@@ -69,7 +69,7 @@ def end_recording():
             sys.exit(1)
 
         # Transcribe audio
-        print("Transcribing audio...")
+        print("Transcribing audio...", file=sys.stderr)
         try:
             from faster_whisper import WhisperModel
 
@@ -80,76 +80,10 @@ def end_recording():
             transcription = " ".join(segment.text.strip() for segment in segments)
 
             if not transcription:
-                print("No speech detected.")
+                print("No speech detected.", file=sys.stderr)
             else:
-                print(f"Transcription: {transcription}")
-
-                # Paste the transcription using clipboard + ydotool
-                print("Pasting transcription...")
-                try:
-                    # Copy to clipboard
-                    subprocess.run(
-                        ["wl-copy"], input=transcription, text=True, check=True
-                    )
-                    # Simulate Ctrl+V paste
-                    subprocess.run(
-                        ["ydotool", "key", "ctrl+v"],
-                        check=True,
-                        capture_output=True,
-                        text=True,
-                    )
-                    print("Done!")
-                except subprocess.CalledProcessError as e:
-                    error_msg = e.stderr if e.stderr else str(e)
-                    if "wl-copy" in str(e.cmd):
-                        print("⚠️  Could not copy to clipboard using wl-copy")
-                        print("Possible solutions:")
-                        print("1. Check if you're running in a Wayland session:")
-                        print("   echo $XDG_SESSION_TYPE")
-                        print("2. If on X11, try using xclip instead:")
-                        print("   echo '<transcription>' | xclip -selection clipboard")
-                        print("📋 Your transcription (ready to copy manually):")
-                        print(f"{transcription}")
-                    elif (
-                        "ydotoold" in error_msg
-                        or "socket" in error_msg
-                        or "Connection refused" in error_msg
-                    ):
-                        print("⚠️  Could not connect to ydotool daemon for pasting")
-
-                        # Check if user is in ydotool group
-                        import grp
-
-                        try:
-                            grp.getgrnam("ydotool")
-                            user_groups = [
-                                g.gr_name
-                                for g in grp.getgrall()
-                                if os.getlogin() in g.gr_mem
-                            ]
-                            if "ydotool" not in user_groups:
-                                print("❌ You are NOT in the 'ydotool' group!")
-                                print("   Run: sudo usermod -a -G ydotool $USER")
-                                print("   Then logout and login again.")
-                        except KeyError:
-                            pass
-
-                        print("Possible solutions:")
-                        print("1. Check if ydotoold is running:")
-                        print("   systemctl status ydotoold")
-                        print("2. You might need to be in the 'input' group:")
-                        print("   sudo usermod -a -G input $USER")
-                        print("   # Then logout and login again")
-                        print("3. Try running ydotoold in user mode:")
-                        print("   systemctl --user start ydotoold")
-                        print(
-                            "4. Text is already in clipboard, manually press Ctrl+V to paste"
-                        )
-                        print("📋 Your transcription is in clipboard:")
-                        print(f"{transcription}")
-                    else:
-                        print(f"Error during paste operation: {error_msg}")
-                        print(f"📋 Transcription: {transcription}")
+                # Output transcription to stdout for piping
+                print(transcription)
 
         except Exception as e:
             print(f"Error during transcription: {e}")
