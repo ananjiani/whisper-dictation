@@ -6,15 +6,17 @@ A minimal voice dictation tool using OpenAI's Whisper for Linux. Press a hotkey 
 
 - 🎤 Simple voice recording with PipeWire
 - 🤖 Accurate transcription using OpenAI's Whisper (via faster-whisper)
-- ⌨️ Automatic text typing with ydotool (works on X11/Wayland)
+- ⌨️ Instant text pasting using clipboard + ydotool (Wayland only)
 - 🚀 Minimal, single-file implementation
 - 🐧 NixOS-ready with included flake
 
 ## Requirements
 
 - Python 3.11+
+- Wayland compositor (required for wl-clipboard)
 - PipeWire (for audio recording)
-- ydotool (for typing text)
+- wl-clipboard (for clipboard operations)
+- ydotool (for paste simulation)
 - faster-whisper (Python package)
 
 ## Installation
@@ -32,21 +34,6 @@ nix develop
 # The script is ready to use!
 ```
 
-### Manual installation
-
-```bash
-# Install system dependencies
-# On Arch: sudo pacman -S pipewire ydotool
-# On Ubuntu: sudo apt install pipewire ydotool
-# On Fedora: sudo dnf install pipewire ydotool
-
-# Clone and setup
-git clone https://github.com/ananjiani/whisper-dictation.git
-cd whisper-dictation
-
-# Install Python dependency
-pip install faster-whisper
-```
 
 ## Usage
 
@@ -61,7 +48,7 @@ pip install faster-whisper
 ## How it works
 
 1. `begin` starts a `pw-record` process to record audio to a temporary WAV file
-2. `end` stops the recording, transcribes the audio using faster-whisper (tiny model), and types the result using ydotool
+2. `end` stops the recording, transcribes the audio using faster-whisper (tiny model), copies text to clipboard, and pastes it using ydotool
 3. Temporary files are cleaned up automatically
 
 ## Configuration
