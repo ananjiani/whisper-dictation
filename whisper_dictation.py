@@ -84,11 +84,16 @@ def end_recording():
             else:
                 print(f"Transcription: {transcription}")
 
-                # Type the transcription using ydotool
-                print("Typing transcription...")
+                # Paste the transcription using clipboard + ydotool
+                print("Pasting transcription...")
                 try:
+                    # Copy to clipboard
                     subprocess.run(
-                        ["ydotool", "type", transcription],
+                        ["wl-copy"], input=transcription, text=True, check=True
+                    )
+                    # Simulate Ctrl+V paste
+                    subprocess.run(
+                        ["ydotool", "key", "ctrl+v"],
                         check=True,
                         capture_output=True,
                         text=True,
@@ -96,12 +101,21 @@ def end_recording():
                     print("Done!")
                 except subprocess.CalledProcessError as e:
                     error_msg = e.stderr if e.stderr else str(e)
-                    if (
+                    if "wl-copy" in str(e.cmd):
+                        print("⚠️  Could not copy to clipboard using wl-copy")
+                        print("Possible solutions:")
+                        print("1. Check if you're running in a Wayland session:")
+                        print("   echo $XDG_SESSION_TYPE")
+                        print("2. If on X11, try using xclip instead:")
+                        print("   echo '<transcription>' | xclip -selection clipboard")
+                        print("📋 Your transcription (ready to copy manually):")
+                        print(f"{transcription}")
+                    elif (
                         "ydotoold" in error_msg
                         or "socket" in error_msg
                         or "Connection refused" in error_msg
                     ):
-                        print("⚠️  Could not connect to ydotool daemon")
+                        print("⚠️  Could not connect to ydotool daemon for pasting")
 
                         # Check if user is in ydotool group
                         import grp
@@ -128,12 +142,13 @@ def end_recording():
                         print("   # Then logout and login again")
                         print("3. Try running ydotoold in user mode:")
                         print("   systemctl --user start ydotoold")
-                        print("4. Or use wl-clipboard (Wayland) / xclip (X11) instead:")
-                        print("   echo '<transcription>' | wl-copy")
-                        print("📋 Your transcription (ready to paste):")
+                        print(
+                            "4. Text is already in clipboard, manually press Ctrl+V to paste"
+                        )
+                        print("📋 Your transcription is in clipboard:")
                         print(f"{transcription}")
                     else:
-                        print(f"Error running ydotool: {error_msg}")
+                        print(f"Error during paste operation: {error_msg}")
                         print(f"📋 Transcription: {transcription}")
 
         except Exception as e:
